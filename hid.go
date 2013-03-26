@@ -6,14 +6,19 @@ package hid
 // (Although since hidapi is cross-platform, making this library crossplatform probably isn't too hard)
 
 // #cgo LDFLAGS: -ludev -lrt
+// #include <iconv.h>
 // #include "hidapi.h"
 import "C"
 
 import (
 	"errors"
+	"log"
+	"sync/atomic"
 )
 
 var errNotImplemented = errors.New("not implemented yet")
+
+var initialized *int32 = new(int32)
 
 func panicNotImplemented() {
 	panic(errNotImplemented.Error())
@@ -87,10 +92,16 @@ type DeviceInfo struct {
 // 		This function returns 0 on success and -1 on error.
 // */
 // int HID_API_EXPORT HID_API_CALL hid_init(void);
-func Init() {
-	//++ return error?
-	//++
-	panicNotImplemented()
+func Init() error {
+	// thread/goroutine-safe initialization
+	if atomic.CompareAndSwapInt32(initialized, 0, 1) {
+		log.Println("Going to do hid_init()")
+		errInt := C.hid_init()
+		if errInt == -1 {
+			return errors.New("Could not initialize hidapi.")
+		}
+	}
+	return nil
 }
 
 // /** @brief Finalize the HIDAPI library.
@@ -105,10 +116,10 @@ func Init() {
 // 		This function returns 0 on success and -1 on error.
 // */
 // int HID_API_EXPORT HID_API_CALL hid_exit(void);
-func Exit() {
+func Exit() error {
 	//++ return error?
 	//++
-	panicNotImplemented()
+	return errNotImplemented
 }
 
 // /** @brief Enumerate the HID Devices.
@@ -172,8 +183,29 @@ func (devs *DeviceInfo) Free() {
 // */
 // HID_API_EXPORT hid_device * HID_API_CALL hid_open(unsigned short vendor_id, unsigned short product_id, const wchar_t *serial_number);
 func Open(vendorId uint16, productId uint16, serialNumber []byte) (*Device, error) { // serialNumber wchar_t as []byte because it can be nil
-	//++
-	panicNotImplemented()
+	// call Init(). Init() checks if actual call to hid_init() is required.
+	if err := Init(); err != nil {
+		return nil, err
+	}
+
+	// convert
+	//++ TODO: convert and use serialNumber in call to hid_open(...)
+	// Use iconv. It seems to support conversion between char and wchar_t
+	// http://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.13/iconv_open.3.html
+	// http://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.13/iconv.3.html
+	// http://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.13/iconv_close.3.html
+	if serialNumber != nil && len(serialNumber) > 0 {
+		return nil, errors.New("hid.Open() does not support a serialNumber yet. Please give a nil serialNumber.")
+	}
+
+	// call hid_open()
+	dev := C.hid_open(C.ushort(vendorId), C.ushort(productId), nil)
+
+	if dev == nil {
+		return nil, errors.New("Unable to open device.")
+	}
+
+	// done
 	return nil, errNotImplemented
 }
 
@@ -192,7 +224,10 @@ func Open(vendorId uint16, productId uint16, serialNumber []byte) (*Device, erro
 // */
 // HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path);
 func OpenPath(path string) (*Device, error) {
-	//++
+	// call Init(). Init() checks if actual call to hid_init() is required.
+	if err := Init(); err != nil {
+		return nil, err
+	}
 	panicNotImplemented()
 	return nil, errNotImplemented
 }
@@ -298,10 +333,10 @@ func (dev *Device) Read(b []byte) (n int, err error) { // implementing the io.Re
 //		This function returns 0 on success and -1 on error.
 //*/
 //int  HID_API_EXPORT HID_API_CALL hid_set_nonblocking(hid_device *device, int nonblock);
-func (dev *Device) Nonblocking(nonblock int) {
-	//++ return error?
+func (dev *Device) Nonblocking(nonblock int) error {
 	//++
 	panicNotImplemented()
+	return errNotImplemented
 }
 
 // /** @brief Send a Feature report to the device.
@@ -331,10 +366,10 @@ func (dev *Device) Nonblocking(nonblock int) {
 // 		-1 on error.
 // */
 // int HID_API_EXPORT HID_API_CALL hid_send_feature_report(hid_device *device, const unsigned char *data, size_t length);
-func (dev *Device) SendFeatureReport(data []byte) {
-	//++ return error?
+func (dev *Device) SendFeatureReport(data []byte) (int, error) {
 	//++
 	panicNotImplemented()
+	return 0, errNotImplemented
 }
 
 // /** @brief Get a feature report from a HID device.
@@ -357,10 +392,10 @@ func (dev *Device) SendFeatureReport(data []byte) {
 // 		-1 on error.
 // */
 // int HID_API_EXPORT HID_API_CALL hid_get_feature_report(hid_device *device, unsigned char *data, size_t length);
-func (dev *Device) GetFeatureReport([]byte) {
-	//++ return error?
+func (dev *Device) GetFeatureReport([]byte) (int, error) {
 	//++
 	panicNotImplemented()
+	return 0, errNotImplemented
 }
 
 // /** @brief Close a HID device.
@@ -370,7 +405,6 @@ func (dev *Device) GetFeatureReport([]byte) {
 // */
 // void HID_API_EXPORT HID_API_CALL hid_close(hid_device *device);
 func (dev *Device) Close() {
-	//++ return error?
 	//++
 	panicNotImplemented()
 }
@@ -386,12 +420,11 @@ func (dev *Device) Close() {
 // 		This function returns 0 on success and -1 on error.
 // */
 // int HID_API_EXPORT_CALL hid_get_manufacturer_string(hid_device *device, wchar_t *string, size_t maxlen);
-func (dev *Device) ManufacturerString(maxlen int) string {
-	//++ maxlen int? correct way to do this?
-	//++ return error?
+func (dev *Device) ManufacturerString(maxlen int) (string, error) {
+	//++ maxlen int? correct way to do this? Should probably just cap on 256 chars or something...
 	//++
 	panicNotImplemented()
-	return errNotImplemented.Error()
+	return "", errNotImplemented
 }
 
 // /** @brief Get The Product String from a HID device.
@@ -405,11 +438,11 @@ func (dev *Device) ManufacturerString(maxlen int) string {
 // 		This function returns 0 on success and -1 on error.
 // */
 // int HID_API_EXPORT_CALL hid_get_product_string(hid_device *device, wchar_t *string, size_t maxlen);
-func (dev *Device) ProductString(maxlen int) {
-	//++ maxlen int? correct way to do this?
-	//++ return error?
+func (dev *Device) ProductString(maxlen int) (string, error) {
+	//++ maxlen int? correct way to do this? Should probably just cap on 256 chars or something...
 	//++
 	panicNotImplemented()
+	return "", errNotImplemented
 }
 
 // /** @brief Get The Serial Number String from a HID device.
@@ -423,12 +456,11 @@ func (dev *Device) ProductString(maxlen int) {
 // 		This function returns 0 on success and -1 on error.
 // */
 // int HID_API_EXPORT_CALL hid_get_serial_number_string(hid_device *device, wchar_t *string, size_t maxlen);
-func (dev *Device) SerialNumberString(maxlen int) string {
-	//++ maxlen int? correct way to do this?
-	//++ return error?
+func (dev *Device) SerialNumberString(maxlen int) (string, error) {
+	//++ maxlen int? correct way to do this? Should probably just cap on 256 chars or something...
 	//++
 	panicNotImplemented()
-	return errNotImplemented.Error()
+	return "", errNotImplemented
 }
 
 // /** @brief Get a string from a HID device, based on its string index.
@@ -443,12 +475,11 @@ func (dev *Device) SerialNumberString(maxlen int) string {
 // 		This function returns 0 on success and -1 on error.
 // */
 // int HID_API_EXPORT_CALL hid_get_indexed_string(hid_device *device, int string_index, wchar_t *string, size_t maxlen);
-func (dev *Device) GetIndexedString(index int, maxlen int) string {
-	//++ maxlen int? correct way to do this?
-	//++ return error?
+func (dev *Device) GetIndexedString(index int, maxlen int) (string, error) {
+	//++ maxlen int? correct way to do this? Should probably just cap on 256 chars or something...
 	//++
 	panicNotImplemented()
-	return errNotImplemented.Error()
+	return "", errNotImplemented
 }
 
 // /** @brief Get a string describing the last error which occurred.
@@ -461,9 +492,12 @@ func (dev *Device) GetIndexedString(index int, maxlen int) string {
 // 		which occurred or NULL if none has occurred.
 // */
 // HID_API_EXPORT const wchar_t* HID_API_CALL hid_error(hid_device *device);
-func (dev *Device) LastError() error {
-	//++ return as type `error` or as type `string`? Probably as string, because thats all it is right now. (The content of what WAS an error)
+func (dev *Device) lastError() error {
+	return errors.New(dev.lastErrorString())
+}
+
+func (dev *Device) lastErrorString() string {
 	//++
 	panicNotImplemented()
-	return errNotImplemented
+	return errNotImplemented.Error()
 }
