@@ -6,12 +6,13 @@ package hid
 // (Although since hidapi is cross-platform, making this library crossplatform probably isn't too hard)
 
 // #cgo LDFLAGS: -ludev -lrt
-// #include <iconv.h>
 // #include "hidapi.h"
 import "C"
 
 import (
 	"errors"
+	"github.com/GeertJohan/cgo.wchar"
+	"github.com/davecgh/go-spew/spew"
 	"log"
 	"sync/atomic"
 )
@@ -30,7 +31,7 @@ func panicNotImplemented() {
 // struct hid_device_;
 // typedef struct hid_device_ hid_device; /**< opaque hidapi structure */
 type Device struct {
-	dev *C.hid_device
+	hidHandle *C.hid_device
 }
 
 // /** hidapi info structure */
@@ -76,6 +77,8 @@ type DeviceInfo struct {
 	Usage           uint16 // Only being used with windows/mac, which are not supported by go.hid yet.
 	InterfaceNumber int
 }
+
+type DeviceInfoList []DeviceInfo
 
 // /** @brief Initialize the HIDAPI library.
 // 
@@ -144,7 +147,7 @@ func Exit() error {
 //     	this linked list by calling hid_free_enumeration().
 // */
 // struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned short vendor_id, unsigned short product_id);
-func Enumerate(vendorId uint16, productId uint16) (*Device, error) {
+func Enumerate(vendorId uint16, productId uint16) (DeviceInfoList, error) {
 	//++
 	panicNotImplemented()
 	return nil, errNotImplemented
@@ -159,9 +162,8 @@ func Enumerate(vendorId uint16, productId uint16) (*Device, error) {
 //     	      hid_enumerate().
 // */
 // void  HID_API_EXPORT HID_API_CALL hid_free_enumeration(struct hid_device_info *devs);
-func (devs *DeviceInfo) Free() {
-	//++ return error?
-	//++
+func (devices *DeviceInfoList) Free() {
+	//++ Call hid_free_enumeration with devices[0]
 	panicNotImplemented()
 }
 
@@ -183,8 +185,10 @@ func (devs *DeviceInfo) Free() {
 // */
 // HID_API_EXPORT hid_device * HID_API_CALL hid_open(unsigned short vendor_id, unsigned short product_id, const wchar_t *serial_number);
 func Open(vendorId uint16, productId uint16, serialNumber []byte) (*Device, error) { // serialNumber wchar_t as []byte because it can be nil
+	var err error
+
 	// call Init(). Init() checks if actual call to hid_init() is required.
-	if err := Init(); err != nil {
+	if err = Init(); err != nil {
 		return nil, err
 	}
 
@@ -194,19 +198,34 @@ func Open(vendorId uint16, productId uint16, serialNumber []byte) (*Device, erro
 	// http://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.13/iconv_open.3.html
 	// http://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.13/iconv.3.html
 	// http://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.13/iconv_close.3.html
+	// if serialNumber != nil && len(serialNumber) > 0 {
+	// 	return nil, errors.New("hid.Open() does not support a serialNumber yet. Please give a nil serialNumber.")
+	// }
+	// serialNumberWchar value. Default nil.
+	serialNumberWcharPtr := (*C.wchar_t)(nil)
+
 	if serialNumber != nil && len(serialNumber) > 0 {
-		return nil, errors.New("hid.Open() does not support a serialNumber yet. Please give a nil serialNumber.")
+		serialNumberWchar, err := wchar.FromGoString(string(serialNumber))
+		if err != nil {
+			return nil, errors.New("Unable to convert serialNumber to wchar string")
+		}
+		spew.Dump(serialNumberWchar)
+		serialNumberWcharPtr = (*C.wchar_t)(&serialNumberWchar[0])
 	}
 
 	// call hid_open()
-	dev := C.hid_open(C.ushort(vendorId), C.ushort(productId), nil)
+	hidHandle := C.hid_open(C.ushort(vendorId), C.ushort(productId), serialNumberWcharPtr)
 
-	if dev == nil {
+	if hidHandle == nil {
 		return nil, errors.New("Unable to open device.")
 	}
 
+	dev := &Device{
+		hidHandle: hidHandle,
+	}
+
 	// done
-	return nil, errNotImplemented
+	return dev, nil
 }
 
 // /** @brief Open a HID device by its path name.
@@ -405,8 +424,7 @@ func (dev *Device) GetFeatureReport([]byte) (int, error) {
 // */
 // void HID_API_EXPORT HID_API_CALL hid_close(hid_device *device);
 func (dev *Device) Close() {
-	//++
-	panicNotImplemented()
+	C.hid_close(dev.hidHandle)
 }
 
 // /** @brief Get The Manufacturer String from a HID device.
@@ -421,10 +439,16 @@ func (dev *Device) Close() {
 // */
 // int HID_API_EXPORT_CALL hid_get_manufacturer_string(hid_device *device, wchar_t *string, size_t maxlen);
 func (dev *Device) ManufacturerString(maxlen int) (string, error) {
-	//++ maxlen int? correct way to do this? Should probably just cap on 256 chars or something...
-	//++
-	panicNotImplemented()
-	return "", errNotImplemented
+	b := new([100]int32)
+
+	res := C.hid_get_manufacturer_string(dev.hidHandle, (*C.wchar_t)(&b[0]), 100)
+	spew.Dump(res)
+	spew.Dump(b)
+
+	//++ TODO: get actual wchar_t, make array for that. Not for int32.
+
+	// nope. failed
+	return "", dev.lastError()
 }
 
 // /** @brief Get The Product String from a HID device.
@@ -498,6 +522,5 @@ func (dev *Device) lastError() error {
 
 func (dev *Device) lastErrorString() string {
 	//++
-	panicNotImplemented()
-	return errNotImplemented.Error()
+	return "Have an error. But lastError is not implemented yet."
 }
