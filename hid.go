@@ -11,6 +11,7 @@ import "C"
 
 import (
 	"errors"
+	"fmt"
 	"github.com/GeertJohan/cgo.wchar"
 	"github.com/davecgh/go-spew/spew"
 	"log"
@@ -439,17 +440,19 @@ func (dev *Device) Close() {
 // */
 // int HID_API_EXPORT_CALL hid_get_manufacturer_string(hid_device *device, wchar_t *string, size_t maxlen);
 func (dev *Device) ManufacturerString() (string, error) {
-	// Create WcharString
+	// create WcharString
 	ws := wchar.NewWcharString(100)
 
+	// retrieve manufacturer string from hid
 	res := C.hid_get_manufacturer_string(dev.hidHandle, (*C.wchar_t)(ws.Pointer()), 100)
 	if res != 0 {
 		return "", dev.lastError()
 	}
 
+	// get WcharString as Go string
 	str := ws.GoString()
 
-	// nope. failed
+	// all done
 	return str, nil
 }
 
@@ -464,11 +467,21 @@ func (dev *Device) ManufacturerString() (string, error) {
 // 		This function returns 0 on success and -1 on error.
 // */
 // int HID_API_EXPORT_CALL hid_get_product_string(hid_device *device, wchar_t *string, size_t maxlen);
-func (dev *Device) ProductString(maxlen int) (string, error) {
-	//++ maxlen int? correct way to do this? Should probably just cap on 256 chars or something...
-	//++
-	panicNotImplemented()
-	return "", errNotImplemented
+func (dev *Device) ProductString() (string, error) {
+	// create WcharString
+	ws := wchar.NewWcharString(100)
+
+	// retrieve manufacturer string from hid
+	res := C.hid_get_product_string(dev.hidHandle, (*C.wchar_t)(ws.Pointer()), 100)
+	if res != 0 {
+		return "", dev.lastError()
+	}
+
+	// get WcharString as Go string
+	str := ws.GoString()
+
+	// all done
+	return str, nil
 }
 
 // /** @brief Get The Serial Number String from a HID device.
@@ -482,11 +495,21 @@ func (dev *Device) ProductString(maxlen int) (string, error) {
 // 		This function returns 0 on success and -1 on error.
 // */
 // int HID_API_EXPORT_CALL hid_get_serial_number_string(hid_device *device, wchar_t *string, size_t maxlen);
-func (dev *Device) SerialNumberString(maxlen int) (string, error) {
-	//++ maxlen int? correct way to do this? Should probably just cap on 256 chars or something...
-	//++
-	panicNotImplemented()
-	return "", errNotImplemented
+func (dev *Device) SerialNumberString() (string, error) {
+	// create WcharString
+	ws := wchar.NewWcharString(100)
+
+	// retrieve manufacturer string from hid
+	res := C.hid_get_serial_number_string(dev.hidHandle, (*C.wchar_t)(ws.Pointer()), 100)
+	if res != 0 {
+		return "", dev.lastError()
+	}
+
+	// get WcharString as Go string
+	str := ws.GoString()
+
+	// all done
+	return str, nil
 }
 
 // /** @brief Get a string from a HID device, based on its string index.
@@ -523,6 +546,10 @@ func (dev *Device) lastError() error {
 }
 
 func (dev *Device) lastErrorString() string {
-	//++
-	return "Have an error. But lastError is not implemented yet."
+	wcharPtr := C.hid_error(dev.hidHandle)
+	str, err := wchar.WcharPtrToGoString(wcharPtr)
+	if err != nil {
+		return fmt.Sprintf("Error retrieving error string: %s", err)
+	}
+	return str
 }
