@@ -205,7 +205,7 @@ func Open(vendorId uint16, productId uint16, serialNumber []byte) (*Device, erro
 	serialNumberWcharPtr := (*C.wchar_t)(nil)
 
 	if serialNumber != nil && len(serialNumber) > 0 {
-		serialNumberWchar, err := wchar.FromGoString(string(serialNumber))
+		serialNumberWchar, err := wchar.GoStringToWcharString(string(serialNumber))
 		if err != nil {
 			return nil, errors.New("Unable to convert serialNumber to wchar string")
 		}
@@ -438,17 +438,19 @@ func (dev *Device) Close() {
 // 		This function returns 0 on success and -1 on error.
 // */
 // int HID_API_EXPORT_CALL hid_get_manufacturer_string(hid_device *device, wchar_t *string, size_t maxlen);
-func (dev *Device) ManufacturerString(maxlen int) (string, error) {
-	b := new([100]int32)
+func (dev *Device) ManufacturerString() (string, error) {
+	// Create WcharString
+	ws := wchar.NewWcharString(100)
 
-	res := C.hid_get_manufacturer_string(dev.hidHandle, (*C.wchar_t)(&b[0]), 100)
-	spew.Dump(res)
-	spew.Dump(b)
+	res := C.hid_get_manufacturer_string(dev.hidHandle, (*C.wchar_t)(ws.Pointer()), 100)
+	if res != 0 {
+		return "", dev.lastError()
+	}
 
-	//++ TODO: get actual wchar_t, make array for that. Not for int32.
+	str := ws.GoString()
 
 	// nope. failed
-	return "", dev.lastError()
+	return str, nil
 }
 
 // /** @brief Get The Product String from a HID device.
