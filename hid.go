@@ -7,15 +7,15 @@ package hid
 
 // #cgo LDFLAGS: -ludev -lrt
 // #include "hidapi.h"
+// #include <stdlib.h>
 import "C"
 
 import (
 	"errors"
 	"fmt"
 	"github.com/GeertJohan/cgo.wchar"
-	"github.com/davecgh/go-spew/spew"
 	"log"
-	"sync/atomic"
+	"sync"
 	"unsafe"
 )
 
@@ -67,6 +67,8 @@ type Device struct {
 //  /** Pointer to the next device */
 //  struct hid_device_info *next;
 // };
+
+//
 type DeviceInfo struct {
 	Path            string
 	VendorId        uint16
@@ -80,7 +82,13 @@ type DeviceInfo struct {
 	InterfaceNumber int
 }
 
-type DeviceInfoList []DeviceInfo
+// Get actual hid *Device from DeviceInfo object
+func (di *DeviceInfo) Device() (*Device, error) {
+	return Open(di.VendorId, di.ProductId, di.SerialNumber)
+}
+
+// List of DeviceInfo objects
+type DeviceInfoList []*DeviceInfo
 
 // /** @brief Initialize the HIDAPI library.
 // 
@@ -98,16 +106,23 @@ type DeviceInfoList []DeviceInfo
 // */
 // int HID_API_EXPORT HID_API_CALL hid_init(void);
 
-func Init() error {
-	// thread/goroutine-safe initialization
-	if atomic.CompareAndSwapInt32(initialized, 0, 1) {
+var initOnce sync.Once
+
+// Internal use. Called to initialize the C hid library in a threadsafe way.
+func hidInit() error {
+	var err error
+
+	initFunc := func() {
 		log.Println("Going to do hid_init()")
 		errInt := C.hid_init()
 		if errInt == -1 {
-			return errors.New("Could not initialize hidapi.")
+			err = errors.New("Could not initialize hidapi.")
 		}
 	}
-	return nil
+
+	initOnce.Do(initFunc)
+
+	return err
 }
 
 // /** @brief Finalize the HIDAPI library.
@@ -123,6 +138,7 @@ func Init() error {
 // */
 // int HID_API_EXPORT HID_API_CALL hid_exit(void);
 
+// TODO
 func Exit() error {
 	//++ return error?
 	//++
@@ -152,25 +168,63 @@ func Exit() error {
 // */
 // struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned short vendor_id, unsigned short product_id);
 
+// Retrieve a list of DeviceInfo objects that match the given vendorId and productId.
+// To retrieve a list of all HID devices': use 0x0 as vendorId and productId.
 func Enumerate(vendorId uint16, productId uint16) (DeviceInfoList, error) {
-	//++
-	panicNotImplemented()
-	return nil, errNotImplemented
-}
+	var err error
 
-// /** @brief Free an enumeration Linked List
-// 
-//     This function frees a linked list created by hid_enumerate().
-// 
-//  @ingroup API
-//     @param devs Pointer to a list of struct_device returned from
-//     	      hid_enumerate().
-// */
-// void  HID_API_EXPORT HID_API_CALL hid_free_enumeration(struct hid_device_info *devs);
+	// call C.hid_enumerate with given parameters
+	first := C.hid_enumerate(C.ushort(vendorId), C.ushort(productId))
 
-func (devices *DeviceInfoList) Free() {
-	//++ Call hid_free_enumeration with devices[0]
-	panicNotImplemented()
+	// check for failure
+	if first == nil {
+		return nil, errors.New("Could not enumerate devices. Failure.")
+	}
+
+	// defer free-ing first
+	defer C.hid_free_enumeration(first)
+
+	// make DeviceInfoList to fill
+	dil := make(DeviceInfoList, 0)
+
+	// loop over linked list to fill DeviceInfoList
+	for next := first; next != nil; next = next.next {
+
+		// create DeviceInfo instance from next hid_device_info
+		di := &DeviceInfo{
+			Path:            C.GoString(next.path),
+			VendorId:        uint16(next.vendor_id),
+			ProductId:       uint16(next.product_id),
+			ReleaseNumber:   uint16(next.release_number),
+			UsagePage:       uint16(next.usage_page),
+			Usage:           uint16(next.usage),
+			InterfaceNumber: int(next.interface_number),
+		}
+
+		// get and convert serial_number from next hid_device_info
+		di.SerialNumber, err = wchar.WcharPtrToGoString(unsafe.Pointer(next.serial_number))
+		if err != nil {
+			return nil, fmt.Errorf("Could not convert *C.wchar_t serial_number from hid_device_info to go string. Error: %s\n", err)
+		}
+
+		// get and convert manufacturer_string from next hid_device_info
+		di.Manufacturer, err = wchar.WcharPtrToGoString(unsafe.Pointer(next.manufacturer_string))
+		if err != nil {
+			return nil, fmt.Errorf("Could not convert *C.wchar_t manufacturer_string from hid_device_info to go string. Error: %s\n", err)
+		}
+
+		// get and convert product_string from next hid_device_info
+		di.Product, err = wchar.WcharPtrToGoString(unsafe.Pointer(next.product_string))
+		if err != nil {
+			return nil, fmt.Errorf("Could not convert *C.wchar_t product_string from hid_device_info to go string. Error: %s\n", err)
+		}
+
+		// store di in dil
+		dil = append(dil, di)
+	}
+
+	// all done
+	return dil, nil
 }
 
 // /** @brief Open a HID device using a Vendor ID (VID), Product ID
@@ -192,35 +246,26 @@ func (devices *DeviceInfoList) Free() {
 // HID_API_EXPORT hid_device * HID_API_CALL hid_open(unsigned short vendor_id, unsigned short product_id, const wchar_t *serial_number);
 
 // Open HID by vendorId, productId and serialNumber.
-// SerialNumbe is optional and can be nil.
+// SerialNumber is optional and can be empty string ("").
 // Returns a *Devica and an error.
-func Open(vendorId uint16, productId uint16, serialNumber []byte) (*Device, error) {
+func Open(vendorId uint16, productId uint16, serialNumber string) (*Device, error) {
 	var err error
 
-	// call Init(). Init() checks if actual call to hid_init() is required.
-	if err = Init(); err != nil {
+	// call hidInit(). hidInit() checks if actual call to hid_hidInit() is required.
+	if err = hidInit(); err != nil {
 		return nil, err
 	}
 
-	// convert
-	//++ TODO: convert and use serialNumber in call to hid_open(...)
-	// Use iconv. It seems to support conversion between char and wchar_t
-	// http://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.13/iconv_open.3.html
-	// http://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.13/iconv.3.html
-	// http://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.13/iconv_close.3.html
-	// if serialNumber != nil && len(serialNumber) > 0 {
-	//  return nil, errors.New("hid.Open() does not support a serialNumber yet. Please give a nil serialNumber.")
-	// }
 	// serialNumberWchar value. Default nil.
 	serialNumberWcharPtr := (*C.wchar_t)(nil)
 
-	if serialNumber != nil && len(serialNumber) > 0 {
-		serialNumberWchar, err := wchar.GoStringToWcharString(string(serialNumber))
+	// if a serialNumber is given, create a WcharString and set the pointer to it's first position pointer
+	if len(serialNumber) > 0 {
+		serialNumberWchar, err := wchar.NewWcharStringFromGoString(serialNumber)
 		if err != nil {
-			return nil, errors.New("Unable to convert serialNumber to wchar string")
+			return nil, errors.New("Unable to convert serialNumber to WcharString")
 		}
-		spew.Dump(serialNumberWchar)
-		serialNumberWcharPtr = (*C.wchar_t)(&serialNumberWchar[0])
+		serialNumberWcharPtr = (*C.wchar_t)(serialNumberWchar.Pointer())
 	}
 
 	// call hid_open()
@@ -253,15 +298,30 @@ func Open(vendorId uint16, productId uint16, serialNumber []byte) (*Device, erro
 // */
 // HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path);
 
-// Open HID by path.
+// Open hid by path.
 // Returns a *Device and an error
 func OpenPath(path string) (*Device, error) {
-	// call Init(). Init() checks if actual call to hid_init() is required.
-	if err := Init(); err != nil {
+	// call hidInit(). hidInit() checks if actual call to hid_hidInit() is required.
+	if err := hidInit(); err != nil {
 		return nil, err
 	}
-	panicNotImplemented()
-	return nil, errNotImplemented
+
+	// conver given path to CChar
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath))
+
+	// call hid_open_path and check for error
+	dev := C.hid_open_path(cPath)
+	if dev == nil {
+		return nil, errors.New("Could not open device by path.")
+	}
+
+	d := &Device{
+		hidHandle: dev,
+	}
+
+	// all done
+	return d, nil
 }
 
 // /** @brief Write an Output report to a HID device.
@@ -373,10 +433,20 @@ func (dev *Device) Read(b []byte) (n int, err error) { // implementing the io.Re
 
 // In non-blocking mode calls to hid_read() will return immediately with a value of 0 if there is no data to be read.
 // In blocking mode, hid_read() will wait (block) until there is data to read before returning.
-func (dev *Device) Nonblocking(newState bool) error {
-	//++
-	panicNotImplemented()
-	return errNotImplemented
+func (dev *Device) SetReadWriteNonBlocking(nonblocking bool) error {
+	// convert blocking bool to nonblocking int
+	nonblock := 0
+	if nonblocking {
+		nonblock = 1
+	}
+
+	// make the call and return error when call failed
+	if C.hid_set_nonblocking(dev.hidHandle, C.int(nonblock)) != 0 {
+		return dev.lastError()
+	}
+
+	// all done
+	return nil
 }
 
 // /** @brief Send a Feature report to the device.
@@ -407,10 +477,14 @@ func (dev *Device) Nonblocking(newState bool) error {
 // */
 // int HID_API_EXPORT HID_API_CALL hid_send_feature_report(hid_device *device, const unsigned char *data, size_t length);
 
+// Send a feature report
 func (dev *Device) SendFeatureReport(data []byte) (int, error) {
-	//++
-	panicNotImplemented()
-	return 0, errNotImplemented
+	res := C.hid_send_feature_report(dev.hidHandle, (*C.uchar)(&data[0]), C.size_t(len(data)))
+	resInt := int(res)
+	if resInt == -1 {
+		return 0, dev.lastError()
+	}
+	return resInt, nil
 }
 
 // /** @brief Get a feature report from a HID device.
@@ -434,10 +508,21 @@ func (dev *Device) SendFeatureReport(data []byte) (int, error) {
 // */
 // int HID_API_EXPORT HID_API_CALL hid_get_feature_report(hid_device *device, unsigned char *data, size_t length);
 
-func (dev *Device) GetFeatureReport([]byte) (int, error) {
-	//++
-	panicNotImplemented()
-	return 0, errNotImplemented
+// Get a FeatureReport from the HID device
+func (dev *Device) GetFeatureReport(reportId byte, reportDataSize int) ([]byte, error) {
+	reportSize := reportDataSize + 1
+	buf := make([]byte, reportSize)
+	buf[0] = reportId
+
+	// send feature report
+	res := C.hid_get_feature_report(dev.hidHandle, (*C.uchar)(&buf[0]), C.size_t(reportSize))
+	resInt := int(res)
+	if resInt == -1 {
+		return nil, dev.lastError()
+	}
+
+	// all done
+	return buf, nil
 }
 
 // /** @brief Close a HID device.
@@ -473,11 +558,8 @@ func (dev *Device) ManufacturerString() (string, error) {
 		return "", dev.lastError()
 	}
 
-	// get WcharString as Go string
-	str := ws.GoString()
-
 	// all done
-	return str, nil
+	return ws.GoString()
 }
 
 // /** @brief Get The Product String from a HID device.
@@ -502,11 +584,8 @@ func (dev *Device) ProductString() (string, error) {
 		return "", dev.lastError()
 	}
 
-	// get WcharString as Go string
-	str := ws.GoString()
-
 	// all done
-	return str, nil
+	return ws.GoString()
 }
 
 // /** @brief Get The Serial Number String from a HID device.
@@ -531,11 +610,8 @@ func (dev *Device) SerialNumberString() (string, error) {
 		return "", dev.lastError()
 	}
 
-	// get WcharString as Go string
-	str := ws.GoString()
-
 	// all done
-	return str, nil
+	return ws.GoString()
 }
 
 // /** @brief Get a string from a HID device, based on its string index.
