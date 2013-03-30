@@ -352,11 +352,23 @@ func OpenPath(path string) (*Device, error) {
 // */
 // int  HID_API_EXPORT HID_API_CALL hid_write(hid_device *device, const unsigned char *data, size_t length);
 
-// Write data to HID.
-func (dev *Device) Write(b []byte) (n int, err error) { // implementing the io.Writer interface
-	//++
-	panicNotImplemented()
-	return 0, errNotImplemented
+// Write data to hid device.
+// Implementing the io.Writer interface with this method.
+func (dev *Device) Write(b []byte) (n int, err error) {
+	// quick return when b is empty
+	if len(b) == 0 {
+		return 0, nil
+	}
+
+	// write data to hid device and handle error
+	res := C.hid_write(dev.hidHandle, (*C.uchar)(&b[0]), C.size_t(len(b)))
+	resInt := int(res)
+	if resInt == -1 {
+		return 0, dev.lastError()
+	}
+
+	// all done
+	return resInt, nil
 }
 
 // /** @brief Read an Input report from a HID device with timeout.
@@ -379,10 +391,22 @@ func (dev *Device) Write(b []byte) (n int, err error) { // implementing the io.W
 // */
 // int HID_API_EXPORT HID_API_CALL hid_read_timeout(hid_device *dev, unsigned char *data, size_t length, int milliseconds);
 
+// Read from hid device with given timeout
 func (dev *Device) ReadTimeout(b []byte, timeout int) (n int, err error) {
-	//++
-	panicNotImplemented()
-	return 0, errNotImplemented
+	// quick return when b is empty
+	if len(b) == 0 {
+		return 0, nil
+	}
+
+	// read data from hid device and handle error
+	res := C.hid_read_timeout(dev.hidHandle, (*C.uchar)(&b[0]), C.size_t(len(b)), C.int(timeout))
+	resInt := int(res)
+	if resInt == -1 {
+		return 0, dev.lastError()
+	}
+
+	// all done
+	return resInt, nil
 }
 
 // /** @brief Read an Input report from a HID device.
@@ -405,10 +429,22 @@ func (dev *Device) ReadTimeout(b []byte, timeout int) (n int, err error) {
 // int  HID_API_EXPORT HID_API_CALL hid_read(hid_device *device, unsigned char *data, size_t length);
 
 // Read data from HID
-func (dev *Device) Read(b []byte) (n int, err error) { // implementing the io.Reader interface
-	//++
-	panicNotImplemented()
-	return 0, errNotImplemented
+// Implementing the io.Writer interface with this method.
+func (dev *Device) Read(b []byte) (n int, err error) {
+	// quick return when b is empty
+	if len(b) == 0 {
+		return 0, nil
+	}
+
+	// read data from hid device and handle error
+	res := C.hid_read(dev.hidHandle, (*C.uchar)(&b[0]), C.size_t(len(b)))
+	resInt := int(res)
+	if resInt == -1 {
+		return 0, dev.lastError()
+	}
+
+	// all done
+	return resInt, nil
 }
 
 ///** @brief Set the device handle to be non-blocking.
@@ -532,6 +568,7 @@ func (dev *Device) GetFeatureReport(reportId byte, reportDataSize int) ([]byte, 
 // */
 // void HID_API_EXPORT HID_API_CALL hid_close(hid_device *device);
 
+// Close the device handle
 func (dev *Device) Close() {
 	C.hid_close(dev.hidHandle)
 }
@@ -548,6 +585,7 @@ func (dev *Device) Close() {
 // */
 // int HID_API_EXPORT_CALL hid_get_manufacturer_string(hid_device *device, wchar_t *string, size_t maxlen);
 
+// Get manufacturer string from device
 func (dev *Device) ManufacturerString() (string, error) {
 	// create WcharString
 	ws := wchar.NewWcharString(100)
@@ -574,6 +612,7 @@ func (dev *Device) ManufacturerString() (string, error) {
 // */
 // int HID_API_EXPORT_CALL hid_get_product_string(hid_device *device, wchar_t *string, size_t maxlen);
 
+// Get product string from device
 func (dev *Device) ProductString() (string, error) {
 	// create WcharString
 	ws := wchar.NewWcharString(100)
@@ -600,6 +639,7 @@ func (dev *Device) ProductString() (string, error) {
 // */
 // int HID_API_EXPORT_CALL hid_get_serial_number_string(hid_device *device, wchar_t *string, size_t maxlen);
 
+// Get Serial number string from device
 func (dev *Device) SerialNumberString() (string, error) {
 	// create WcharString
 	ws := wchar.NewWcharString(100)
@@ -627,6 +667,8 @@ func (dev *Device) SerialNumberString() (string, error) {
 // */
 // int HID_API_EXPORT_CALL hid_get_indexed_string(hid_device *device, int string_index, wchar_t *string, size_t maxlen);
 
+// Get an indexed string
+// TODO
 func (dev *Device) GetIndexedString(index int, maxlen int) (string, error) {
 	//++ maxlen int? correct way to do this? Should probably just cap on 256 chars or something...
 	//++
