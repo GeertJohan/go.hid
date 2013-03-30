@@ -68,7 +68,7 @@ type Device struct {
 //  struct hid_device_info *next;
 // };
 
-//
+// DeviceInfo provides all information about an HID device.
 type DeviceInfo struct {
 	Path            string
 	VendorId        uint16
