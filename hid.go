@@ -667,13 +667,19 @@ func (dev *Device) SerialNumberString() (string, error) {
 // */
 // int HID_API_EXPORT_CALL hid_get_indexed_string(hid_device *device, int string_index, wchar_t *string, size_t maxlen);
 
-// Get an indexed string
-// TODO
-func (dev *Device) GetIndexedString(index int, maxlen int) (string, error) {
-	//++ maxlen int? correct way to do this? Should probably just cap on 256 chars or something...
-	//++
-	panicNotImplemented()
-	return "", errNotImplemented
+// Get a string by index. String length will be max 256 wchars.
+func (dev *Device) GetIndexedString(index int) (string, error) {
+	// create WcharString
+	ws := wchar.NewWcharString(256)
+
+	// retrieve manufacturer string from hid
+	res := C.hid_get_indexed_string(dev.hidHandle, C.int(index), (*C.wchar_t)(ws.Pointer()), 256)
+	if res != 0 {
+		return "", dev.lastError()
+	}
+
+	// all done
+	return ws.GoString()
 }
 
 // /** @brief Get a string describing the last error which occurred.
