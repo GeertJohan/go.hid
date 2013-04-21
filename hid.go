@@ -21,12 +21,6 @@ import (
 
 var errNotImplemented = errors.New("not implemented yet")
 
-var initialized *int32 = new(int32)
-
-func panicNotImplemented() {
-	panic(errNotImplemented.Error())
-}
-
 //++ FIXME: How to do this on binary end? C.hid_exit()
 // wrap as hid.Exit() ???? that sounds bad..
 
