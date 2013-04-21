@@ -7,7 +7,7 @@ To compile this project you need libudev.h on your system. Install this on debia
 When that is done: `go get github.com/GeertJohan/go.hid`
 
 ### Documentation:
-]godoc.org/github.com/GeertJohan/go.hid](https://godoc.org/github.com/GeertJohan/go.hid)
+[godoc.org/github.com/GeertJohan/go.hid](https://godoc.org/github.com/GeertJohan/go.hid)
 
 ### Example:
 This is a simple example on how to use feature reports. For a working example view [GeertJohan/mgl](https://github.com/GeertJohan/mgl).
