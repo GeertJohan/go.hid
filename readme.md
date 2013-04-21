@@ -48,6 +48,9 @@ func main() {
 }
 ```
 
+### License:
+The go code in this project is licenced under a a Simplified BSD license. Please read the [LICENSE file][LICENSE].
+
 ### TODO:
 At this point, the package works for linux with hidraw.
 hidapi itself is already cross-platform, so making this package work cross-platform shouldn't be a lot of work.
