@@ -1,5 +1,9 @@
 package hid
 
+/**
+ * This code is licensed under a Simplified BSD License. For more information read the LICENSE file that came with this package.
+ */
+
 // This file wraps github.com/signall11/hidapi
 // It's based on their hidapi.h, which this file also includes and actually wraps.
 // At this time, development is done with linux and hence other platforms might not be supported.
