@@ -1,13 +1,12 @@
 ## go.hid
-This [go](http://golang.org) package wraps the [signal11/hidapi](https://github.com/signal11/hidapi).
+This [go](http://golang.org) package wraps the [signal11/hidapi](https://github.com/signal11/hidapi) and provides communication with USB Human Interface Devices.
 
-### Usage:
-#### Installation:
+### Installation:
 To compile this project you need libudev.h on your system. Install this on debian/ubuntu with `sudo apt-get install libudev-dev`
 
 When that is done: `go get github.com/GeertJohan/go.hid`
 
-#### Example:
+### Example:
 This is a simple example on how to use feature reports. For a working example view [GeertJohan/mgl](https://github.com/GeertJohan/mgl).
 ```go
 package main
