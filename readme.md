@@ -46,7 +46,8 @@ func main() {
 ### TODO:
 At this point, the package works for linux with hidraw.
 hidapi itself is already cross-platform, so making this package work cross-platform shouldn't be a lot of work.
-- Make this work cross-platform.
+- Make this package work cross-platform.
+- Add better support for hidapi init() and exit(). (At this time hidapi's init() is called once on first Open() call)
 - Add tests (find if there is a usb-hid dummy device that has expected input/output and works consistently within an OS (we can write a test file for each OS seperated))
 - Better example (preferably with a dummy test device)
 
