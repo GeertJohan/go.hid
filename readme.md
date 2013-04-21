@@ -1,6 +1,8 @@
 ## go.hid
 This [go](http://golang.org) package wraps the [signal11/hidapi](https://github.com/signal11/hidapi) and provides communication with USB Human Interface Devices.
 
+** This package is not completely tested yet! **
+
 ### Installation:
 To compile this project you need libudev.h on your system. Install this on debian/ubuntu with `sudo apt-get install libudev-dev`
 
