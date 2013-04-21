@@ -26,15 +26,15 @@ func main() {
 
 	// create a feature report. This is always 8*n+1 bytes long, where n is >1.
 	data := make([]byte, 9)
-	data[0] = 0x01  // dummy data
-	data[1] = 0x02  // dummy data
-	data[2] = 0x03  // dummy data
-	data[3] = 0x04  // dummy data
-	data[4] = 0x05  // dummy data
-	data[5] = 0x06  // dummy data
-	data[6] = 0x07  // dummy data
-	data[7] = 0x08  // dummy data
-	data[8] = 0xec  // EOR
+	data[0] = 0x42  // report ID
+	data[1] = 0x00  // dummy data
+	data[2] = 0x01  // dummy data
+	data[3] = 0x02  // dummy data
+	data[4] = 0x03  // dummy data
+	data[5] = 0x04  // dummy data
+	data[6] = 0x05  // dummy data
+	data[7] = 0x06  // dummy data
+	data[8] = 0x07  // dummy data
 
 	_, err := leds.SendFeatureReport(data)
 	if err != nil {
