@@ -200,19 +200,19 @@ func Enumerate(vendorId uint16, productId uint16) (DeviceInfoList, error) {
 		}
 
 		// get and convert serial_number from next hid_device_info
-		di.SerialNumber, err = wchar.WcharPtrToGoString(unsafe.Pointer(next.serial_number))
+		di.SerialNumber, err = wchar.WcharStringPtrToGoString(unsafe.Pointer(next.serial_number))
 		if err != nil {
 			return nil, fmt.Errorf("Could not convert *C.wchar_t serial_number from hid_device_info to go string. Error: %s\n", err)
 		}
 
 		// get and convert manufacturer_string from next hid_device_info
-		di.Manufacturer, err = wchar.WcharPtrToGoString(unsafe.Pointer(next.manufacturer_string))
+		di.Manufacturer, err = wchar.WcharStringPtrToGoString(unsafe.Pointer(next.manufacturer_string))
 		if err != nil {
 			return nil, fmt.Errorf("Could not convert *C.wchar_t manufacturer_string from hid_device_info to go string. Error: %s\n", err)
 		}
 
 		// get and convert product_string from next hid_device_info
-		di.Product, err = wchar.WcharPtrToGoString(unsafe.Pointer(next.product_string))
+		di.Product, err = wchar.WcharStringPtrToGoString(unsafe.Pointer(next.product_string))
 		if err != nil {
 			return nil, fmt.Errorf("Could not convert *C.wchar_t product_string from hid_device_info to go string. Error: %s\n", err)
 		}
@@ -259,7 +259,7 @@ func Open(vendorId uint16, productId uint16, serialNumber string) (*Device, erro
 
 	// if a serialNumber is given, create a WcharString and set the pointer to it's first position pointer
 	if len(serialNumber) > 0 {
-		serialNumberWchar, err := wchar.NewWcharStringFromGoString(serialNumber)
+		serialNumberWchar, err := wcharFromGoString(serialNumber)
 		if err != nil {
 			return nil, errors.New("Unable to convert serialNumber to WcharString")
 		}
@@ -697,7 +697,7 @@ func (dev *Device) lastError() error {
 
 func (dev *Device) lastErrorString() string {
 	wcharPtr := C.hid_error(dev.hidHandle)
-	str, err := wchar.WcharPtrToGoString(unsafe.Pointer(wcharPtr))
+	str, err := wchar.WcharStringPtrToGoString(unsafe.Pointer(wcharPtr))
 	if err != nil {
 		return fmt.Sprintf("Error retrieving error string: %s", err)
 	}
