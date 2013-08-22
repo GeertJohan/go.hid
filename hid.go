@@ -259,7 +259,7 @@ func Open(vendorId uint16, productId uint16, serialNumber string) (*Device, erro
 
 	// if a serialNumber is given, create a WcharString and set the pointer to it's first position pointer
 	if len(serialNumber) > 0 {
-		serialNumberWchar, err := wcharFromGoString(serialNumber)
+		serialNumberWchar, err := wchar.FromGoString(serialNumber)
 		if err != nil {
 			return nil, errors.New("Unable to convert serialNumber to WcharString")
 		}
