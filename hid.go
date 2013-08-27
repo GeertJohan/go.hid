@@ -202,7 +202,8 @@ func Enumerate(vendorId uint16, productId uint16) (DeviceInfoList, error) {
 		// get and convert serial_number from next hid_device_info
 		di.SerialNumber, err = wchar.WcharStringPtrToGoString(unsafe.Pointer(next.serial_number))
 		if err != nil {
-			return nil, fmt.Errorf("Could not convert *C.wchar_t serial_number from hid_device_info to go string. Error: %s\n", err)
+			log.Println("Error converting the Serial Number, setting to empty string")
+			di.SerialNumber = ""
 		}
 
 		// get and convert manufacturer_string from next hid_device_info
