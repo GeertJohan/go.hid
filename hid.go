@@ -9,9 +9,11 @@ package hid
 // At this time, development is done with linux and hence other platforms might not be supported.
 // (Although since hidapi is cross-platform, making this library crossplatform probably isn't too hard)
 
-// #cgo LDFLAGS: -ludev -lrt
-// #include "hidapi.h"
-// #include <stdlib.h>
+/*
+#cgo LDFLAGS: -lhidapi
+#include <hidapi/hidapi.h>
+#include <stdlib.h>
+*/
 import "C"
 
 import (
