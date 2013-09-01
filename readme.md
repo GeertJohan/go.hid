@@ -4,9 +4,20 @@ This [go](http://golang.org) package wraps the [signal11/hidapi](https://github.
 **This package is not completely tested yet!**
 
 ### Installation:
-To compile this project you need libudev.h on your system. Install this on debian/ubuntu with `sudo apt-get install libudev-dev`
+This project depends on libhidapi. This must be installed manually since issue #5 was merged, to make the project cross-platform compatible.
+Follow instructions on screen, you might need to install dependency packages such as libudev-dev and libusb-1.0-0-dev, depending on your OS.
+```shell
+git clone git@github.com:signal11/hidapi.git
+cd hidapi
+./bootstrap
+./configure
+cd <your OS here. e.g. linux, mac, etc.>
+make
+sudo make install
+```
+For more instructions on libhidapi, please visit [signal11/hidapi](https://github.com/signal11/hidapi).
 
-When that is done: `go get github.com/GeertJohan/go.hid`
+When you have installed hidapi lib, install this package with `go get github.com/GeertJohan/go.hid`.
 
 ### Documentation:
 [godoc.org/github.com/GeertJohan/go.hid](https://godoc.org/github.com/GeertJohan/go.hid)
