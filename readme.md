@@ -85,7 +85,7 @@ func main() {
 ```
 
 ### License:
-The go code in this project is licenced under a a Simplified BSD license. Please read the [LICENSE file][LICENSE].
+The go code in this project is licenced under a a Simplified BSD license. Please read the [LICENSE file](LICENSE).
 
 ### TODO:
 At this point, the package works for linux with hidraw.
