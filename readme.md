@@ -13,9 +13,13 @@ cd hidapi
 ```
 
 Now change directory depending on your OS. 
+
 For linux + hidraw: `cd linux`. (requires libudev. Package libudev-dev on debian/ubuntu.)
+
 For linux + libusb: `cd libusb`. (requires libusb. Package libusb-1.0-0-dev on debian/ubuntu.)
+
 For mac: `cd mac`.
+
 For windows: `cd windows`.
 
 Make and install.
@@ -31,7 +35,9 @@ run some wizzard, probably.. (PR on readme is very welcome)
 
 Lastly, for linux only:
 Create a symlink pointing libhidapi.so to the version you chose:
+
 For linux + hidraw: `cd /usr/local/lib; sudo ln -s libhidapi-hidraw.so libhidapi.so`
+
 For linux + libusb: `cd /usr/local/lib; sudo ln -s libhidapi-libusb.so libhidapi.so`
 
 For more instructions on libhidapi, please visit [signal11/hidapi](https://github.com/signal11/hidapi).
