@@ -4,17 +4,36 @@ This [go](http://golang.org) package wraps the [signal11/hidapi](https://github.
 **This package is not completely tested yet!**
 
 ### Installation:
-This project depends on libhidapi. This must be installed manually since issue #5 was merged, to make the project cross-platform compatible.
-Follow instructions on screen, you might need to install dependency packages such as libudev-dev and libusb-1.0-0-dev, depending on your OS.
+This project depends on libhidapi, which must be installed manually.
 ```shell
 git clone git@github.com:signal11/hidapi.git
 cd hidapi
 ./bootstrap
 ./configure
-cd <your OS here. e.g. linux, mac, etc.>
+```
+
+Now change directory depending on your OS. 
+For linux + hidraw: `cd linux`. (requires libudev. Package libudev-dev on debian/ubuntu.)
+For linux + libusb: `cd libusb`. (requires libusb. Package libusb-1.0-0-dev on debian/ubuntu.)
+For mac: `cd mac`.
+For windows: `cd windows`.
+
+Make and install.
+For linux/mac:
+```
 make
 sudo make install
 ```
+For windows:
+```
+run some wizzard, probably.. (PR on readme is very welcome)
+```
+
+Lastly, for linux only:
+Create a symlink pointing libhidapi.so to the version you chose:
+For linux + hidraw: `cd /usr/local/lib; sudo ln -s libhidapi-hidraw.so libhidapi.so`
+For linux + libusb: `cd /usr/local/lib; sudo ln -s libhidapi-libusb.so libhidapi.so`
+
 For more instructions on libhidapi, please visit [signal11/hidapi](https://github.com/signal11/hidapi).
 
 When you have installed hidapi lib, install this package with `go get github.com/GeertJohan/go.hid`.
