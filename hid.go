@@ -430,7 +430,7 @@ func (dev *Device) ReadTimeout(b []byte, timeout int) (n int, err error) {
 // int  HID_API_EXPORT HID_API_CALL hid_read(hid_device *device, unsigned char *data, size_t length);
 
 // Read data from HID
-// Implementing the io.Writer interface with this method.
+// Implementing the io.Reader interface with this method.
 func (dev *Device) Read(b []byte) (n int, err error) {
 	// quick return when b is empty
 	if len(b) == 0 {
