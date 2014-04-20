@@ -91,16 +91,16 @@ func (di *DeviceInfo) Device() (*Device, error) {
 type DeviceInfoList []*DeviceInfo
 
 // /** @brief Initialize the HIDAPI library.
-// 
+//
 //  This function initializes the HIDAPI library. Calling it is not
 //  strictly necessary, as it will be called automatically by
 //  hid_enumerate() and any of the hid_open_*() functions if it is
 //  needed.  This function should be called at the beginning of
 //  execution however, if there is a chance of HIDAPI handles
 //  being opened by different threads simultaneously.
-//  
+//
 //  @ingroup API
-// 
+//
 //  @returns
 //  	This function returns 0 on success and -1 on error.
 // */
@@ -126,13 +126,13 @@ func hidInit() error {
 }
 
 // /** @brief Finalize the HIDAPI library.
-// 
+//
 //  This function frees all of the static data associated with
 //  HIDAPI. It should be called at the end of execution to avoid
 //  memory leaks.
-// 
+//
 //  @ingroup API
-// 
+//
 //     @returns
 //  	This function returns 0 on success and -1 on error.
 // */
@@ -146,20 +146,20 @@ func Exit() error {
 }
 
 // /** @brief Enumerate the HID Devices.
-// 
+//
 //  This function returns a linked list of all the HID devices
 //  attached to the system which match vendor_id and product_id.
 //  If @p vendor_id is set to 0 then any vendor matches.
 //  If @p product_id is set to 0 then any product matches.
 //  If @p vendor_id and @p product_id are both set to 0, then
 //  all HID devices will be returned.
-// 
+//
 //  @ingroup API
 //  @param vendor_id The Vendor ID (VID) of the types of device
 //  	to open.
 //  @param product_id The Product ID (PID) of the types of
 //  	device to open.
-// 
+//
 //     @returns
 //     	This function returns a pointer to a linked list of type
 //     	struct #hid_device, containing information about the HID devices
@@ -230,16 +230,16 @@ func Enumerate(vendorId uint16, productId uint16) (DeviceInfoList, error) {
 
 // /** @brief Open a HID device using a Vendor ID (VID), Product ID
 //  (PID) and optionally a serial number.
-// 
+//
 //  If @p serial_number is NULL, the first device with the
 //  specified VID and PID is opened.
-// 
+//
 //  @ingroup API
 //  @param vendor_id The Vendor ID (VID) of the device to open.
 //  @param product_id The Product ID (PID) of the device to open.
 //  @param serial_number The Serial Number of the device to open
 //  	               (Optionally NULL).
-// 
+//
 //  @returns
 //  	This function returns a pointer to a #hid_device object on
 //  	success or NULL on failure.
@@ -285,14 +285,14 @@ func Open(vendorId uint16, productId uint16, serialNumber string) (*Device, erro
 }
 
 // /** @brief Open a HID device by its path name.
-// 
+//
 //  The path name be determined by calling hid_enumerate(), or a
 //  platform-specific path name can be used (eg: /dev/hidraw0 on
 //  Linux).
-// 
+//
 //  @ingroup API
 //     @param path The path name of the device to open
-// 
+//
 //  @returns
 //  	This function returns a pointer to a #hid_device object on
 //  	success or NULL on failure.
@@ -326,7 +326,7 @@ func OpenPath(path string) (*Device, error) {
 }
 
 // /** @brief Write an Output report to a HID device.
-// 
+//
 //  The first byte of @p data[] must contain the Report ID. For
 //  devices which only support a single report, this must be set
 //  to 0x0. The remaining bytes contain the report data. Since
@@ -336,17 +336,17 @@ func OpenPath(path string) (*Device, error) {
 //  hid_write(), the Report ID (or 0x0, for devices with a
 //  single report), followed by the report data (16 bytes). In
 //  this example, the length passed in would be 17.
-// 
+//
 //  hid_write() will send the data on the first OUT endpoint, if
 //  one exists. If it does not, it will send the data through
 //  the Control Endpoint (Endpoint 0).
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 //  @param data The data to send, including the report number as
 //  	the first byte.
 //  @param length The length in bytes of the data to send.
-// 
+//
 //  @returns
 //  	This function returns the actual number of bytes written and
 //  	-1 on error.
@@ -373,11 +373,11 @@ func (dev *Device) Write(b []byte) (n int, err error) {
 }
 
 // /** @brief Read an Input report from a HID device with timeout.
-// 
+//
 //  Input reports are returned
 //  to the host through the INTERRUPT IN endpoint. The first byte will
 //  contain the Report number if the device uses numbered reports.
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 //  @param data A buffer to put the read data into.
@@ -385,7 +385,7 @@ func (dev *Device) Write(b []byte) (n int, err error) {
 //  	multiple reports, make sure to read an extra byte for
 //  	the report number.
 //  @param milliseconds timeout in milliseconds or -1 for blocking wait.
-// 
+//
 //  @returns
 //  	This function returns the actual number of bytes read and
 //  	-1 on error.
@@ -411,18 +411,18 @@ func (dev *Device) ReadTimeout(b []byte, timeout int) (n int, err error) {
 }
 
 // /** @brief Read an Input report from a HID device.
-// 
+//
 //  Input reports are returned
 //     to the host through the INTERRUPT IN endpoint. The first byte will
 //  contain the Report number if the device uses numbered reports.
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 //  @param data A buffer to put the read data into.
 //  @param length The number of bytes to read. For devices with
 //  	multiple reports, make sure to read an extra byte for
 //  	the report number.
-// 
+//
 //  @returns
 //  	This function returns the actual number of bytes read and
 //  	-1 on error.
@@ -487,7 +487,7 @@ func (dev *Device) SetReadWriteNonBlocking(nonblocking bool) error {
 }
 
 // /** @brief Send a Feature report to the device.
-// 
+//
 //  Feature reports are sent over the Control endpoint as a
 //  Set_Report transfer.  The first byte of @p data[] must
 //  contain the Report ID. For devices which only support a
@@ -500,14 +500,14 @@ func (dev *Device) SetReadWriteNonBlocking(nonblocking bool) error {
 //  devices which do not use numbered reports), followed by the
 //  report data (16 bytes). In this example, the length passed
 //  in would be 17.
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 //  @param data The data to send, including the report number as
 //  	the first byte.
 //  @param length The length in bytes of the data to send, including
 //  	the report number.
-// 
+//
 //  @returns
 //  	This function returns the actual number of bytes written and
 //  	-1 on error.
@@ -525,11 +525,11 @@ func (dev *Device) SendFeatureReport(data []byte) (int, error) {
 }
 
 // /** @brief Get a feature report from a HID device.
-// 
+//
 //  Make sure to set the first byte of @p data[] to the Report
 //  ID of the report to be read.  Make sure to allow space for
 //  this extra byte in @p data[].
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 //  @param data A buffer to put the read data into, including
@@ -538,7 +538,7 @@ func (dev *Device) SendFeatureReport(data []byte) (int, error) {
 //  @param length The number of bytes to read, including an
 //  	extra byte for the report ID. The buffer can be longer
 //  	than the actual report.
-// 
+//
 //  @returns
 //  	This function returns the number of bytes read and
 //  	-1 on error.
@@ -563,7 +563,7 @@ func (dev *Device) GetFeatureReport(reportId byte, reportDataSize int) ([]byte, 
 }
 
 // /** @brief Close a HID device.
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 // */
@@ -575,12 +575,12 @@ func (dev *Device) Close() {
 }
 
 // /** @brief Get The Manufacturer String from a HID device.
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 //  @param string A wide string buffer to put the data into.
 //  @param maxlen The length of the buffer in multiples of wchar_t.
-// 
+//
 //  @returns
 //  	This function returns 0 on success and -1 on error.
 // */
@@ -602,12 +602,12 @@ func (dev *Device) ManufacturerString() (string, error) {
 }
 
 // /** @brief Get The Product String from a HID device.
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 //  @param string A wide string buffer to put the data into.
 //  @param maxlen The length of the buffer in multiples of wchar_t.
-// 
+//
 //  @returns
 //  	This function returns 0 on success and -1 on error.
 // */
@@ -629,12 +629,12 @@ func (dev *Device) ProductString() (string, error) {
 }
 
 // /** @brief Get The Serial Number String from a HID device.
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 //  @param string A wide string buffer to put the data into.
 //  @param maxlen The length of the buffer in multiples of wchar_t.
-// 
+//
 //  @returns
 //  	This function returns 0 on success and -1 on error.
 // */
@@ -656,13 +656,13 @@ func (dev *Device) SerialNumberString() (string, error) {
 }
 
 // /** @brief Get a string from a HID device, based on its string index.
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
 //  @param string_index The index of the string to get.
 //  @param string A wide string buffer to put the data into.
 //  @param maxlen The length of the buffer in multiples of wchar_t.
-// 
+//
 //  @returns
 //  	This function returns 0 on success and -1 on error.
 // */
@@ -684,10 +684,10 @@ func (dev *Device) GetIndexedString(index int) (string, error) {
 }
 
 // /** @brief Get a string describing the last error which occurred.
-// 
+//
 //  @ingroup API
 //  @param device A device handle returned from hid_open().
-// 
+//
 //  @returns
 //  	This function returns a string containing the last error
 //  	which occurred or NULL if none has occurred.
