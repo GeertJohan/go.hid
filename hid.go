@@ -6,10 +6,12 @@ package hid
 
 // This file wraps github.com/signall11/hidapi
 // It's based on their hidapi.h, which this file also includes and actually wraps.
-// At this time, development is done with linux and hence other platforms might not be supported.
-// (Although since hidapi is cross-platform, making this library crossplatform probably isn't too hard)
 
 /*
+#cgo linux pkg-config: libusb-1.0
+#cgo linux LDFLAGS: -lusb-1.0
+#cgo darwin LDFLAGS: -framework IOKit -framework CoreFoundation
+#cgo windows LDFLAGS: -lsetupapi
 #cgo LDFLAGS: -lhidapi
 #include <hidapi/hidapi.h>
 #include <stdlib.h>
