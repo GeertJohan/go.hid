@@ -213,7 +213,8 @@ func Enumerate(vendorId uint16, productId uint16) (DeviceInfoList, error) {
 		// get and convert manufacturer_string from next hid_device_info
 		di.Manufacturer, err = wchar.WcharStringPtrToGoString(unsafe.Pointer(next.manufacturer_string))
 		if err != nil {
-			return nil, fmt.Errorf("Could not convert *C.wchar_t manufacturer_string from hid_device_info to go string. Error: %s\n", err)
+			log.Println("Error converting the Manufacturer, setting to empty string")
+			di.Manufacturer = ""
 		}
 
 		// get and convert product_string from next hid_device_info
