@@ -12,8 +12,7 @@ package hid
 #cgo linux LDFLAGS: -lusb-1.0
 #cgo darwin LDFLAGS: -framework IOKit -framework CoreFoundation
 #cgo windows LDFLAGS: -lsetupapi
-#cgo LDFLAGS: -lhidapi
-#include <hidapi/hidapi.h>
+#include "hidapi.h"
 #include <stdlib.h>
 */
 import "C"
