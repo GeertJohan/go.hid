@@ -20,10 +20,10 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"github.com/GeertJohan/cgo.wchar"
-	"log"
 	"sync"
 	"unsafe"
+
+	"github.com/GeertJohan/cgo.wchar"
 )
 
 var errNotImplemented = errors.New("not implemented yet")
@@ -114,7 +114,6 @@ func hidInit() error {
 	var err error
 
 	initFunc := func() {
-		log.Println("Going to do hid_init()")
 		errInt := C.hid_init()
 		if errInt == -1 {
 			err = errors.New("Could not initialize hidapi.")
@@ -205,14 +204,12 @@ func Enumerate(vendorId uint16, productId uint16) (DeviceInfoList, error) {
 		// get and convert serial_number from next hid_device_info
 		di.SerialNumber, err = wchar.WcharStringPtrToGoString(unsafe.Pointer(next.serial_number))
 		if err != nil {
-			log.Println("Error converting the Serial Number, setting to empty string")
 			di.SerialNumber = ""
 		}
 
 		// get and convert manufacturer_string from next hid_device_info
 		di.Manufacturer, err = wchar.WcharStringPtrToGoString(unsafe.Pointer(next.manufacturer_string))
 		if err != nil {
-			log.Println("Error converting the Manufacturer, setting to empty string")
 			di.Manufacturer = ""
 		}
 
