@@ -265,7 +265,7 @@ func Open(vendorId uint16, productId uint16, serialNumber string) (*Device, erro
 		if err != nil {
 			return nil, errors.New("Unable to convert serialNumber to WcharString")
 		}
-		serialNumberWcharPtr = (*C.wchar_t)(serialNumberWchar.Pointer())
+		serialNumberWcharPtr = (*C.wchar_t)(unsafe.Pointer(serialNumberWchar.Pointer()))
 	}
 
 	// call hid_open()
@@ -591,7 +591,7 @@ func (dev *Device) ManufacturerString() (string, error) {
 	ws := wchar.NewWcharString(100)
 
 	// retrieve manufacturer string from hid
-	res := C.hid_get_manufacturer_string(dev.hidHandle, (*C.wchar_t)(ws.Pointer()), 100)
+	res := C.hid_get_manufacturer_string(dev.hidHandle, (*C.wchar_t)(unsafe.Pointer(ws.Pointer())), 100)
 	if res != 0 {
 		return "", dev.lastError()
 	}
@@ -618,7 +618,7 @@ func (dev *Device) ProductString() (string, error) {
 	ws := wchar.NewWcharString(100)
 
 	// retrieve manufacturer string from hid
-	res := C.hid_get_product_string(dev.hidHandle, (*C.wchar_t)(ws.Pointer()), 100)
+	res := C.hid_get_product_string(dev.hidHandle, (*C.wchar_t)(unsafe.Pointer(ws.Pointer())), 100)
 	if res != 0 {
 		return "", dev.lastError()
 	}
@@ -645,7 +645,7 @@ func (dev *Device) SerialNumberString() (string, error) {
 	ws := wchar.NewWcharString(100)
 
 	// retrieve manufacturer string from hid
-	res := C.hid_get_serial_number_string(dev.hidHandle, (*C.wchar_t)(ws.Pointer()), 100)
+	res := C.hid_get_serial_number_string(dev.hidHandle, (*C.wchar_t)(unsafe.Pointer(ws.Pointer())), 100)
 	if res != 0 {
 		return "", dev.lastError()
 	}
@@ -673,7 +673,7 @@ func (dev *Device) GetIndexedString(index int) (string, error) {
 	ws := wchar.NewWcharString(256)
 
 	// retrieve manufacturer string from hid
-	res := C.hid_get_indexed_string(dev.hidHandle, C.int(index), (*C.wchar_t)(ws.Pointer()), 256)
+	res := C.hid_get_indexed_string(dev.hidHandle, C.int(index), (*C.wchar_t)(unsafe.Pointer(ws.Pointer())), 256)
 	if res != 0 {
 		return "", dev.lastError()
 	}
