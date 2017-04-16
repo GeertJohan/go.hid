@@ -1,5 +1,6 @@
 
 ** This package is discontinued **
+
 This package does not work with Go1.6+. I won't be updating this package since a better alternative is already available, please take a look at [karalabe/hid](https://github.com/karalabe/hid).
 
 
